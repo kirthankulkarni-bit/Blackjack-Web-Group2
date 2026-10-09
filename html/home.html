@@ -1,11 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blackjack</title>
+    <link rel="stylesheet" href="../css/style.css">
 </head>
-<body>
-    
+
+<!-- converting wire frame diagram into html-->
+<body> 
+<div class="game">
+   <!-- sidebar boxes -->
+        <aside class="sidebar">
+
+    <div class="box">
+        <p>Score to beat</p>
+        <span class="value" id="score-to-beat">0</span>
+    </div>
+
+    <div class="box">
+        <p>Time</p>
+        <span class="value" id="time">0.0</span>
+    </div>
+
+     <div class="box">
+        <p>Current Multiplier</p>
+        <span class="value" id="multiplier">1x</span>
+    </div>
+
+     <div class="box tall">
+        <p>Round Stats</p>
+    </div>
+
+    <div class="box tall">
+        <p>Lifetime Stats</p>
+    </div>
+
+    <button class="box" id="btn-settings">Settings</button>
+
+    </aside>
+
+
+    <!-- topbar boxes -->
+    <header class="topbar">
+
+    <div class="box">
+        <p>Money</p>
+        <span class="value" id="money">0</span>
+    </div>
+
+    <a href="#shop" class="box">Shop</a>
+
+    </header>
+
+
+    <!-- play area -->
+    <main class="play-area" id="play-area">
+        Play Area
+    </main>
+
+
+    <!-- actions that players can do -->
+    <footer class="actions">
+        <button class="box" id="btn-hit">Hit</button>
+        <button class="box" id="btn-split">Split</button>
+        <button class="box" id="btn-stand">Stand</button>
+        <button class="box" id="btn-fold">Fold</button>
+    </footer>
+
+    </div>
+
+        <!-- shop popup -->
+        <div class="shop" id="shop">
+        <div class="shop-window">
+
+        <div class="shop-top">
+            <a href="#" class="box">Exit Shop</a>
+                <div class="box">
+                    <p>Money</p>
+                    <span class="value" id="shop-money">0</span>
+                </div>
+            </div>
+
+         <div class="shop-grid">
+            <div class="shop-column">
+                <h2 class="box">Multipliers</h2>
+                    <button class="box">2x</button>
+                    <button class="box">4x</button>
+                    <button class="box">10x</button>
+                    <button class="box">20x</button>
+                </div>
+
+                <div class="shop-column">
+                    <h2 class="box">Cheats</h2>
+                        <button class="box">See Next Card</button>
+                        <button class="box">Safety Net</button>
+                        <button class="box">Pause Time</button>
+                        <button class="box">Edit Card Value</button>
+                </div>
+
+                <div class="shop-column">
+                    <h2 class="box">Card Shenanigans</h2>
+                    <button class="box">Add Ace to Deck</button>
+                    <button class="box">Refresh Deck</button>
+                    
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+
+</html>
+
 </body>
 </html>
