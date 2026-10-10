@@ -17,7 +17,7 @@ const gameState = {
         roundNumber: 0,
         kosekBucks: 0,
         maxScore: 0,
-        throughScores: []
+        throughRecords: []
     },
 
     round: {
@@ -26,7 +26,15 @@ const gameState = {
         roundScore: 0,
         scoreToBeat: 0
     }
-};
+}
+const roundRecord = {
+    roundNumber: 0,
+    scoreToBeat: 0,
+    roundScore: 0,
+    elapsedMs: 0,
+    handsPlayed: 0,
+    kosekBucksEarned: 0
+}
 
 //blackjack layer
 class Card {
