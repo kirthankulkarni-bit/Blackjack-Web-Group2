@@ -179,3 +179,37 @@ a.box:hover {
     border-color: var(--cyan);
     color: var(--black);
 }
+
+.modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.75);
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-window {
+    width: 360px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+    background-color: var(--gray-panel);
+    border: 1px solid var(--cyan);
+    border-radius: 20px;
+    animation: pop-in 0.25s ease-out;
+}
+
+.card {
+    display: inline-block;
+}
+
+.cards .card:last-child {
+    animation: deal-in 0.3s ease-out;
+}
