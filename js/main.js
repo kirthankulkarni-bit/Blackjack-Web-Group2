@@ -5,6 +5,9 @@ const $ = (id) => document.getElementById(id);
 let highestScore;//highest score ever achieved
 let currentNotice = "";
 let lastResult = null;
+let timerId =  null;
+let currentTime = 0;
+
 
 //let highestRoundScore; //idr what this is ignore for now
 const SCORESTOBEAT = [1, 20, 30, 40, 60, 70, 80, 100, 120, 140, 150]//0 index with 0 being for the tutorial
@@ -37,6 +40,7 @@ const gameState = {
         active: false, 
         finished: false, 
         currentHand: 0, 
+        currentTime: 0,
         hands: [], 
         deck: []
     },
@@ -116,6 +120,7 @@ function isPlayable(hand) {
 }
 
 function startRound() {
+  gameState.round.currentTime = 0;
   if (gameState.round.active || gameState.round.finished) return;
   const bet = Number($("bet-amount").value);
   if (!Number.isFinite(bet) || bet <= 0 || bet > gameState.run.kosekBucks) {
@@ -215,7 +220,7 @@ function continueRound() {
     gameState.round.hands = [];
     setNotice("Safety Net used. Your run continues.");
     render();
-  }
+ }
 }
 
 function endRun() {
@@ -283,6 +288,12 @@ function render() {
                 </div>
             `).join('');
         }
+    }
+
+    function updateTime() {
+      currentTime += 10
+      if(gameState.upgrades.pauseTime != true)
+        document.querySelector(timerId) = gameState.round.currentTime;
     }
 }
 
