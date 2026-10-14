@@ -3,12 +3,19 @@ const $ = (id) => document.getElementById(id);
 
 
 let highestScore;//highest score ever achieved
+let currentNotice = "";
+let lastResult = null;
+
 //let highestRoundScore; //idr what this is ignore for now
 const SCORESTOBEAT = [1, 20, 30, 40, 60, 70, 80, 100, 120, 140, 150]//0 index with 0 being for the tutorial
 const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 const SUITS = ["♠", "♥", "♦", "♣"];
-let settings = {"visual":"dark", "readerMode":"normal",
-    "mode": "normal"}//reference to settings and wtv is in there
+let settings = {
+    "visual": "dark", 
+    "readerMode": "normal",
+    "mode": "normal",
+    "confirmFold": false//flag for wtv is wanted
+};
 
 //game layer
 const gameState = {
@@ -81,7 +88,7 @@ function createDeck() { //Queue
     deck.push({ id: `${rank}-${suit}`, suit, rank, value: cardValue(rank), faceup: true }); 
   }
   if (gameState.upgrades && gameState.upgrades.addAce === true) {
-    deck.push(new Card(suit, rank, cardValue(rank), `${rank}-${suit}`));
+    deck.push(new Card("★", "A", 11, "A-extra"));
     gameState.upgrades.addAce = false;
   }
   for (let i = deck.length - 1; i > 0; i--) {
@@ -125,9 +132,11 @@ function startRound() {
   gameState.round.active = true;
   gameState.round.finished = false;
   editBonusUsed = false;
+
   timeBufferUsed = Boolean(gameState.upgrades.pauseTime);
   gameState.upgrades.pauseTime = false;
   gameState.screen = "play";
+
   setNotice("Your hand is live. Make your move."); 
   if (handTotal(hand) === 21) {
     hand.status = "stood";
@@ -184,7 +193,7 @@ function finishRound(reason) {
   gameState.run.throughRecords.push(record);
   lastResult = { cleared, score, earned, reason, handScores, record, protected: !cleared && gameState._safetyNetJustUsed };
   render();
-  showResult(lastResult);
+  showResultModal(lastResult);
 }
 
 function continueRound() {
@@ -227,6 +236,11 @@ function newRun() {
   $("end-modal").classList.add("hidden");
   setNotice("New run started. Choose a bet and deal.");
   render();
+}
+function showResultModal(res) {
+    $("result-title").textContent = res.cleared ? "Round Cleared!" : (res.protected ? "Protected by Safety Net" : "Round Failed");
+    $("result-desc").innerHTML = `Score: ${res.score} / Target: ${gameState.round.scoreToBeat}<br>${res.cleared ? `Earned: $${res.earned} Bucks` : "You missed the score target :("}`;
+    $("result-modal").classList.remove("hidden");
 }
 
 function setNotice(message, type = "") {
@@ -276,7 +290,7 @@ function stand() {
 function fold() {
   const hand = activeHand();
   if (!gameState.round.active || !isPlayable(hand)) return;
-  if (gameState.settings.confirmFold && !window.confirm("Fold this hand? It will score zero.")) return;
+  if (settings.confirmFold && !window.confirm("Fold this hand? It will score zero.")) return;
   hand.status = "Folded";
   hand.stood = true;
   setNotice(`Hand ${hand.id} folded.`, "bad");
@@ -335,12 +349,22 @@ let upgrades = [{"scoreMultiplier":1}, {"owned":ownedUpgrades}, {"timeDecayReduc
 
 //Buttons
 function selectMultiplier(multi) { 
+    if (typeof multi === 'number') {
+        gameState.upgrades.scoreMultiplier += multi;
+        render();
+    }
     if (typeof multipliers !== 'undefined' && multipliers[multi]) {
         currentMultiplier += multipliers[multi];
     }
 }
 
 //Scoring Systems
+$("btn-deal").addEventListener("click", startRound);
+$("btn-hit").addEventListener("click", hit);
+$("btn-stand").addEventListener("click", stand);
+$("btn-split").addEventListener("click", split);
+$("btn-fold").addEventListener("click", fold);
+
 function calculateHandScore(total, multiplier = 1) {
     // A bust scores zero
     if (total > 21 || total <= 0) return 0;
