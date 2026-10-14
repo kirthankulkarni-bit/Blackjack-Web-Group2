@@ -256,7 +256,7 @@ document.addEventListener("keydown", event => {
   }
 });
 
-render();
+newRun();
 
 //defining render:
 function render() {
