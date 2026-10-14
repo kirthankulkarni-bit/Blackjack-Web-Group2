@@ -147,7 +147,7 @@ function startRound() {
 
 function advanceHandOrFinish() {
   const next = gameState.round.hands.findIndex((h, i) => i > gameState.round.currentHand && isPlayable(h));
-  if (next >= 0) {
+  if(next >= 0) {
     gameState.round.currentHand = next;
     setNotice(`Now playing hand ${activeHand().id}.`);
     render();
@@ -250,7 +250,7 @@ function setNotice(message, type = "") {
 }
 
 document.addEventListener("keydown", event => {
-  if (event.key.toLowerCase() === "k" && !gameState.round.active) {
+  if(event.key.toLowerCase() === "k" && !gameState.round.active) {
     setNotice("♠ Easter egg: may the odds be ever in your favor.");
     render();
   }
@@ -258,16 +258,45 @@ document.addEventListener("keydown", event => {
 
 render();
 
+//defining render:
+function render() {
+    const moneyEl = $("money");
+    if (moneyEl) moneyEl.textContent = gameState.run.kosekBucks;
+    const shopMoneyEl = $("shop-money");
+    if (shopMoneyEl) shopMoneyEl.textContent = gameState.run.kosekBucks;
+    const scoreToBeatEl = $("score-to-beat");
+    if (scoreToBeatEl) scoreToBeatEl.textContent = gameState.round.scoreToBeat;
+    const multiplierEl = $("multiplier");
+    if (multiplierEl) multiplierEl.textContent = `${gameState.upgrades.scoreMultiplier}x`;
+
+    const playArea = $("play-area");
+    if (playArea) {
+        if(!gameState.round.active && gameState.round.hands.length === 0){
+            playArea.innerHTML = "Play Area";
+        }else{
+            playArea.innerHTML = gameState.round.hands.map(hand => `
+                <div class="hand-box">
+                    <p>Hand ${hand.id} (Total: ${hand.total})</p>
+                    <div class="cards">
+                        ${hand.cards.map(card => `<span class="card">${card.rank}${card.suit}</span>`).join(' ')}
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+}
+
+
 //Action functions ?
 function hit() {
   const hand = activeHand();
-  if (!gameState.round.active || !isPlayable(hand)) return;
+  if(!gameState.round.active || !isPlayable(hand)) return;
   hand.cards.push(drawCard());
   const total = handTotal(hand);
   if (total > 21) {
     setNotice(`Hand ${hand.id} busted at ${total}.`, "bad");
     advanceHandOrFinish();
-  } else if (total === 21) {
+  } else if(total === 21) {
     hand.status = "stood";
     hand.stood = true;
     setNotice(`Hand ${hand.id} reached 21.`);
@@ -305,7 +334,7 @@ function split() {
     setNotice("Split requires two cards of the same rank. Buy Split License to override.", "bad");
     return;
   }
-  if (gameState.run.kosekBucks < gameState.round.bet) {
+  if(gameState.run.kosekBucks < gameState.round.bet) {
     setNotice("You need enough Bucks to match your bet for a split.", "bad");
     return;
   }
@@ -367,7 +396,7 @@ $("btn-fold").addEventListener("click", fold);
 
 function calculateHandScore(total, multiplier = 1) {
     // A bust scores zero
-    if (total > 21 || total <= 0) return 0;
+    if(total > 21 || total <= 0) return 0;
 
     const distancePenalty = 5 * Math.abs(21 - total);
     const baseScore = Math.max(0, 100 - distancePenalty);
@@ -377,6 +406,6 @@ function calculateHandScore(total, multiplier = 1) {
 
 function cardValue(rank) {
   if (rank === "A") return 11;
-  if (["J", "Q", "K"].includes(rank)) return 10;
+  if(["J", "Q", "K"].includes(rank)) return 10;
   return Number(rank);
 }
