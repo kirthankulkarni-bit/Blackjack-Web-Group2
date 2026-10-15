@@ -5,7 +5,7 @@ const $ = (id) => document.getElementById(id);
 let highestScore;//highest score ever achieved
 let currentNotice = "";
 let lastResult = null;
-let timerId =  null;
+let timerInterval = null;
 let currentTime = 0;
 
 
@@ -32,7 +32,11 @@ const gameState = {
         roundsCleared: 0,
         handsPlayed: 0
     },
-
+    lifetime: {
+        roundsCleared: 0,
+        handsPlayed: 0,
+        bestScore: 0
+    },
     round: {
         roundScore: 0,
         scoreToBeat: SCORESTOBEAT[0],
@@ -136,10 +140,10 @@ function startRound() {
   gameState.round.roundScore = 0;
   gameState.round.active = true;
   gameState.round.finished = false;
-  editBonusUsed = false;
+  
+  // Start timer if you implemented timerInterval
+  if (typeof startTimer === "function") startTimer();
 
-  timeBufferUsed = Boolean(gameState.upgrades.pauseTime);
-  gameState.upgrades.pauseTime = false;
   gameState.screen = "play";
 
   setNotice("Your hand is live. Make your move."); 
@@ -147,7 +151,9 @@ function startRound() {
     hand.status = "stood";
     hand.stood = true;
     finishRound("blackjack");
-  } else render();
+  } else {
+    render();
+  }
 }
 
 function advanceHandOrFinish() {
@@ -172,13 +178,19 @@ function finishRound(reason) {
   if (gameState.round.finished) return;
   gameState.round.active = false;
   gameState.round.finished = true;
-  const handScores = gameState.round.hands.map(h => calculateHandScore(h.total, gameState.upgrades.scoreMultiplier));
+  
+  // Stop the timer when the round ends
+  if (typeof stopTimer === "function") stopTimer();
+
+  const handScores = gameState.round.hands.map(h => calculateHandScore(h.total, gameState.round.currentTime, gameState.upgrades.scoreMultiplier));
   const score = handScores.reduce((sum, n) => sum + n, 0);
   gameState.round.roundScore = score;
   gameState.run.maxScore = Math.max(gameState.run.maxScore, score);
   gameState.run.handsPlayed += gameState.round.hands.length;
+  
   const cleared = score >= gameState.round.scoreToBeat;
   let earned = 0;
+  
   if (cleared) {
     earned = gameState.round.bet * 2;
     gameState.run.kosekBucks += earned;
@@ -190,11 +202,17 @@ function finishRound(reason) {
   } else {
     gameState._safetyNetJustUsed = false;
   }
+  
   const record = {
-    roundNumber: gameState.run.roundNumber, scoreToBeat: gameState.round.scoreToBeat,
-    roundScore: score, handsPlayed: gameState.round.hands.length,
-    kosekBucksEarned: earned, bet: gameState.round.bet, result: cleared ? "Cleared" : (gameState._safetyNetJustUsed ? "Protected" : "Missed")
+    roundNumber: gameState.run.roundNumber, 
+    scoreToBeat: gameState.round.scoreToBeat,
+    roundScore: score, 
+    handsPlayed: gameState.round.hands.length,
+    kosekBucksEarned: earned, 
+    bet: gameState.round.bet, 
+    result: cleared ? "Cleared" : (gameState._safetyNetJustUsed ? "Protected" : "Missed")
   };
+  
   gameState.run.throughRecords.push(record);
   lastResult = { cleared, score, earned, reason, handScores, record, protected: !cleared && gameState._safetyNetJustUsed };
   render();
@@ -203,33 +221,34 @@ function finishRound(reason) {
 
 function continueRound() {
   $("result-modal").classList.add("hidden");
-  if (lastResult && lastResult.cleared) {
+  if (lastResult && (lastResult.cleared || lastResult.protected)) {
     gameState.run.roundNumber++;
     gameState.round.scoreToBeat = SCORESTOBEAT[gameState.run.roundNumber - 1] ?? (SCORESTOBEAT[SCORESTOBEAT.length - 1] + (gameState.run.roundNumber - SCORESTOBEAT.length) * 7);
     gameState.round.finished = false;
     gameState.round.active = false;
     gameState.round.hands = [];
+    gameState.round.currentTime = 0;
     gameState.screen = "play";
-    setNotice("Round cleared! Visit the shop or deal the next hand.");
+    setNotice("Round cleared! Choose your bet and deal the next hand.");
     render();
-  } else if (lastResult && lastResult.protected) {
-    gameState.run.roundNumber++;
-    gameState.round.scoreToBeat = SCORESTOBEAT[gameState.run.roundNumber - 1] ?? (SCORESTOBEAT[SCORESTOBEAT.length - 1] + (gameState.run.roundNumber - SCORESTOBEAT.length) * 7);
-    gameState.round.finished = false;
-    gameState.round.active = false;
-    gameState.round.hands = [];
-    setNotice("Safety Net used. Your run continues.");
-    render();
- }
+  }
 }
 
 function endRun() {
   $("result-modal").classList.add("hidden");
+
+  gameState.lifetime.roundsCleared += gameState.run.roundsCleared;
+  gameState.lifetime.handsPlayed += gameState.run.handsPlayed;
+  gameState.lifetime.bestScore = Math.max(gameState.lifetime.bestScore, gameState.run.maxScore);
+
   $("end-title").textContent = "The table is closed.";
   $("end-message").textContent = `You reached round ${gameState.run.roundNumber} and earned a best score of ${gameState.run.maxScore}.`;
   $("end-summary").innerHTML = `Rounds cleared: ${gameState.run.roundsCleared}<br>Hands played: ${gameState.run.handsPlayed}<br>Remaining Bucks: ${gameState.run.kosekBucks}<br>Best score: ${gameState.run.maxScore}`;
+  
   $("end-modal").classList.remove("hidden");
   gameState.screen = "end";
+  
+  render();
 }
 
 function newRun() {
@@ -273,6 +292,22 @@ function render() {
     if (scoreToBeatEl) scoreToBeatEl.textContent = gameState.round.scoreToBeat;
     const multiplierEl = $("multiplier");
     if (multiplierEl) multiplierEl.textContent = `${gameState.upgrades.scoreMultiplier}x`;
+    const statCleared = $("stat-cleared");
+    if (statCleared) statCleared.textContent = gameState.lifetime.roundsCleared;
+    const statHands = $("stat-hands");
+    if (statHands) statHands.textContent = gameState.lifetime.handsPlayed;
+    const statBest = $("stat-best");
+    if (statBest) statBest.textContent = gameState.lifetime.bestScore;
+    const statUpgrades = $("stat-upgrades");
+    if (statUpgrades) {
+      let activeUpgrades = [];
+      if (gameState.upgrades.scoreMultiplier > 1) activeUpgrades.push(`${gameState.upgrades.scoreMultiplier}x Multiplier`);
+      if (gameState.upgrades.safetyNet) activeUpgrades.push("Safety Net");
+      if (gameState.upgrades.pauseTime) activeUpgrades.push("Pause Time");
+      if (gameState.upgrades.startWithSplit) activeUpgrades.push("Split License");
+      
+      statUpgrades.textContent = activeUpgrades.length > 0 ? activeUpgrades.join(", ") : "None";
+    }
 
     const playArea = $("play-area");
     if (playArea) {
@@ -289,14 +324,31 @@ function render() {
             `).join('');
         }
     }
-
-    function updateTime() {
-      currentTime += 10
-      if(gameState.upgrades.pauseTime != true)
-        document.querySelector(timerId) = gameState.round.currentTime;
-    }
+    const statRound = $("stat-round");
+    if (statRound) statRound.textContent = gameState.run.roundNumber;
+    
+    const statBet = $("stat-bet");
+    if (statBet) statBet.textContent = gameState.round.bet;
+    
+    const statLast = $("stat-last");
+    if (statLast) statLast.textContent = lastResult ? lastResult.score : 0;
 }
 
+function startTimer() {
+  clearInterval(timerInterval);
+  gameState.round.currentTime = 0;
+  timerInterval = setInterval(() => {
+    if (gameState.round.active && !gameState.upgrades.pauseTime) {
+      gameState.round.currentTime += 0.1; // Increment by 0.1 seconds
+      const timeEl = $("time");
+      if (timeEl) timeEl.textContent = gameState.round.currentTime.toFixed(1);
+    }
+  }, 100);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+}
 
 //Action functions ?
 function hit() {
@@ -387,6 +439,36 @@ let ownedUpgrades = [];
 let upgrades = [{"scoreMultiplier":1}, {"owned":ownedUpgrades}, {"timeDecayReduction":0}, 
     {"safetyNet":false}, {"pauseTime":false}, {"startWithSplit":false}, {"seeNextCard":0}];
 
+function buyMultiplier(amount, cost) {
+  if (gameState.run.kosekBucks < cost) {
+    setNotice("Not enough Kosek Bucks!", "bad");
+    return;
+  }
+  gameState.run.kosekBucks -= cost;
+  gameState.upgrades.scoreMultiplier += amount;
+  setNotice(`Purchased +${amount}x Multiplier!`, "good");
+  render();
+}
+
+function buyCheat(cheatKey, cost) {
+  if (gameState.run.kosekBucks < cost) {
+    setNotice("Not enough Kosek Bucks!", "bad");
+    return;
+  }
+  
+  if (cheatKey === "safetyNet" || cheatKey === "pauseTime" || cheatKey === "startWithSplit" || cheatKey === "addAce") {
+    if (gameState.upgrades[cheatKey] === true) {
+      setNotice("You already own this upgrade!", "bad");
+      return;
+    }
+    gameState.upgrades[cheatKey] = true;
+  }
+
+  gameState.run.kosekBucks -= cost;
+  setNotice(`Successfully purchased ${cheatKey}!`, "good");
+  render();
+}
+
 //Buttons
 function selectMultiplier(multi) { 
     if (typeof multi === 'number') {
@@ -405,12 +487,15 @@ $("btn-stand").addEventListener("click", stand);
 $("btn-split").addEventListener("click", split);
 $("btn-fold").addEventListener("click", fold);
 
-function calculateHandScore(total, multiplier = 1) {
-    // A bust scores zero
-    if(total > 21 || total <= 0) return 0;
+function calculateHandScore(total, currentTime, multiplier = 1) {
+    if (total > 21 || total <= 0) return 0;
 
     const distancePenalty = 5 * Math.abs(21 - total);
-    const baseScore = Math.max(0, 100 - distancePenalty);
+    
+    // timeDecayReduction can reduce the penalty amount
+    let timePenalty = currentTime * (1 - (gameState.upgrades.timeDecayReduction || 0));
+    
+    const baseScore = Math.max(0, 100 - distancePenalty - timePenalty);
 
     return Math.floor(baseScore * multiplier);
 }

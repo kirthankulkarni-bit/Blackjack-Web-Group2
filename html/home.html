@@ -35,6 +35,7 @@
         <p class="stat-line">Round: <span id="stat-round">1</span></p>
         <p class="stat-line">Bet: <span id="stat-bet">0</span></p>
         <p class="stat-line">Last score: <span id="stat-last">0</span></p>
+        <p class="stat-line">Upgrades: <span id="stat-upgrades">None</span></p>
     </div>
 
     <div class="box tall">
@@ -98,32 +99,27 @@
          <div class="shop-grid">
             <div class="shop-column">
                 <h2 class="box">Multipliers</h2>
-                    <button class="box">2x</button>
-                    <button class="box">4x</button>
-                    <button class="box">10x</button>
-                    <button class="box">20x</button>
+                    <button class="box" onclick="buyMultiplier(2, 20)">+2x ($50)</button>
+                    <button class="box" onclick="buyMultiplier(3, 50)">+5x ($250)</button>
+                    <button class="box" onclick="buyMultiplier(9, 100)">+9x ($500)</button>
                 </div>
 
                 <div class="shop-column">
                     <h2 class="box">Cheats</h2>
-                        <button class="box">See Next Card</button>
-                        <button class="box">Safety Net</button>
-                        <button class="box">Pause Time</button>
-                        <button class="box">Edit Card Value</button>
+                        <button class="box" onclick="buyCheat('safetyNet', 40)">Safety Net ($40)</button>
+                        <button class="box" onclick="buyCheat('pauseTime', 30)">Pause Time ($30)</button>
+                        <button class="box" onclick="buyCheat('startWithSplit', 50)">Split License ($50)</button>
                 </div>
 
                 <div class="shop-column">
                     <h2 class="box">Card Shenanigans</h2>
-                    <button class="box">Add Ace to Deck</button>
-                    <button class="box">Refresh Deck</button>
-                    
+                    <button class="box" onclick="buyCheat('addAce', 35)">Add Ace ($35)</button>
                 </div>
             </div>
-
         </div>
     </div>
-            <!-- physical button for when round ends, score/title comes from main.js -->  
-                <div class="modal hidden" id="result-modal">
+        <!-- physical button for when round ends, score/title comes from main.js -->  
+            <div class="modal hidden" id="result-modal">
             <div class="modal-window">
             <h2 id="result-title"></h2>
             <p id="result-desc"></p>
